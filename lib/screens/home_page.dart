@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'models/citizen.dart';
-import 'models/maintenance.dart';
-import 'services/maintenance_service.dart';
+import '../models/citizen.dart';
+import '../models/maintenance.dart';
+import '../services/maintenance_service.dart';
 import 'login_page.dart';
+import 'report_history_screen.dart'; // Import History Screen
+import 'edit_report_screen.dart';    // Import Edit Screen
 
 class HomePage extends StatefulWidget {
   final Citizen currentUser;
@@ -51,6 +53,19 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // --- DELETE LOGIC ---
+  void _deleteReport(Maintenance report) {
+    setState(() {
+      // NOTE: Ideally, you should add a delete method to your MaintenanceService.
+      // For now, we are removing it from the UI list locally.
+      _maintenanceService.getReports().remove(report); 
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Report deleted successfully")),
+    );
+  }
+
   void _handleLogout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear(); 
@@ -62,10 +77,10 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // --- UPDATED DRAWER (Dark Theme) ---
+  // --- DRAWER (Dark Theme) ---
   Widget _buildDrawer() {
     return Drawer(
-      backgroundColor: bgBlack, // Dark drawer background
+      backgroundColor: bgBlack, 
       child: Column(
         children: [
           const SizedBox(height: 60),
@@ -75,7 +90,7 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: accentPurple, width: 2), // Purple border
+              border: Border.all(color: accentPurple, width: 2), 
             ),
             child: const CircleAvatar(
               radius: 45,
@@ -134,13 +149,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Drawer Tile Style
   Widget _buildDarkDetailTile(IconData icon, String label, String value) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: bgSurface, // Dark Surface color
+        color: bgSurface, 
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
@@ -148,7 +162,7 @@ class _HomePageState extends State<HomePage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF282836), // Slightly lighter circle
+              color: const Color(0xFF282836),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: accentPurple, size: 20),
@@ -171,13 +185,13 @@ class _HomePageState extends State<HomePage> {
     List<Maintenance> reports = _maintenanceService.getReports();
 
     return Scaffold(
-      backgroundColor: bgBlack, // Entire App Background
+      backgroundColor: bgBlack,
       drawer: _buildDrawer(),
       appBar: AppBar(
         title: const Text("Dashboard", style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white), // White Hamburger icon
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -191,7 +205,7 @@ class _HomePageState extends State<HomePage> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: bgSurface, // Dark Card
+                  color: bgSurface, 
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Column(
@@ -220,8 +234,24 @@ class _HomePageState extends State<HomePage> {
               
               const SizedBox(height: 30),
               
-              // --- LIST SECTION ---
-              const Text("Recent Reports", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+              // --- LIST SECTION HEADER ---
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Recent Reports", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                  
+                  // 1. ADDED: View All History Button
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (context) => ReportHistoryScreen()
+                      ));
+                    },
+                    child: Text("View All", style: TextStyle(color: accentPurple)),
+                  )
+                ],
+              ),
+              
               const SizedBox(height: 15),
               
               reports.isEmpty
@@ -242,7 +272,7 @@ class _HomePageState extends State<HomePage> {
                             leading: CircleAvatar(
                               backgroundColor: const Color(0xFF282836),
                               child: Text(
-                                report.reportID.substring(0, 2), 
+                                report.reportID.length >= 2 ? report.reportID.substring(0, 2) : "R", 
                                 style: TextStyle(color: accentPurple, fontWeight: FontWeight.bold)
                               ),
                             ),
@@ -251,7 +281,47 @@ class _HomePageState extends State<HomePage> {
                               "${report.location} - ${report.status.name}",
                               style: const TextStyle(color: Colors.white54),
                             ),
-                            trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white30),
+                            
+                            // 2. ADDED: Popup Menu for Edit/Delete
+                            trailing: PopupMenuButton<String>(
+                              color: const Color(0xFF1E1E2C),
+                              icon: const Icon(Icons.more_vert, color: Colors.white),
+                              onSelected: (value) {
+                                if (value == 'edit') {
+                                  Navigator.push(context, MaterialPageRoute(
+                                    builder: (context) => EditReportScreen(
+                                      // Mapping your Maintenance model to the Edit Screen inputs
+                                      title: report.category, 
+                                      description: report.description ?? "", // Handle if null
+                                    ),
+                                  ));
+                                } else if (value == 'delete') {
+                                  _deleteReport(report);
+                                }
+                              },
+                              itemBuilder: (BuildContext context) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit, size: 20), 
+                                      SizedBox(width: 8), 
+                                      Text("Edit", style: TextStyle(color: Colors.white))
+                                    ]
+                                  ),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.delete, color: Colors.red, size: 20), 
+                                      SizedBox(width: 8), 
+                                      Text("Delete", style: TextStyle(color: Colors.red))
+                                    ]
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       },
@@ -263,14 +333,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Helper for Dark Input Fields inside the Form
   Widget _buildDarkTextField(TextEditingController controller, String hint) {
     return TextField(
       controller: controller,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         filled: true,
-        fillColor: bgBlack, // Inner input color is darker than card
+        fillColor: bgBlack, 
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.white38),
         border: OutlineInputBorder(
