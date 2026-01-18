@@ -65,7 +65,7 @@ class _HomePageState extends State<HomePage> {
         'category': finalCategory,
         'description': _descController.text.trim(),
         'status': 'pending',
-        'createdAt': FieldValue.serverTimestamp(),
+        'createdAt': Timestamp.now(),
       });
 
       _locationController.clear();
@@ -186,50 +186,83 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildRecentReports() {
-    final uid = _auth.currentUser!.uid;
+  final user = _auth.currentUser;
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: _firestore
-          .collection('reports')
-          .where('userId', isEqualTo: uid)
-          .orderBy('createdAt', descending: true)
-          .limit(5)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final docs = snapshot.data!.docs;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Recent Reports",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 15),
-            if (docs.isEmpty)
-              const Text(
-                "No reports yet",
-                style: TextStyle(color: Colors.white54),
-              ),
-            ...docs.map((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              return _buildReportTile(doc.id, data);
-            }),
-          ],
-        );
-      },
+  if (user == null) {
+    return const Text(
+      "User not logged in",
+      style: TextStyle(color: Colors.red),
     );
   }
 
+  return StreamBuilder<QuerySnapshot>(
+    stream: _firestore
+        .collection('reports')
+        .where('userId', isEqualTo: user.uid)
+        .orderBy('createdAt', descending: true)
+        .limit(5)
+        .snapshots(),
+
+    builder: (context, snapshot) {
+      if (snapshot.hasError) {
+        return const Text(
+          "Error loading reports",
+          style: TextStyle(color: Colors.red),
+        );
+      }
+
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      final docs = snapshot.data?.docs ?? [];
+
+      if (docs.isEmpty) {
+        return const Text(
+          "No reports yet",
+          style: TextStyle(color: Colors.white54),
+        );
+      }
+
+      return Column(
+        children: docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>? ?? {};
+
+          final category = data['category'] ?? 'Unknown';
+          final location = data['location'] ?? 'No location';
+          final status = data['status'] ?? 'pending';
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: bgSurface,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: ListTile(
+              title: Text(category,
+                  style: const TextStyle(color: Colors.white)),
+              subtitle: Text(
+                "$location - $status",
+                style: const TextStyle(color: Colors.white54),
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () => _deleteReport(doc.id),
+              ),
+            ),
+          );
+        }).toList(),
+      );
+    },
+  );
+}
+
+
   Widget _buildReportTile(String docId, Map<String, dynamic> data) {
+    final category = data['category'] ?? 'Unknown';
+    final location = data['location'] ?? 'No location';
+    final status = data['status'] ?? 'pending';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -237,14 +270,8 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(15),
       ),
       child: ListTile(
-        title: Text(
-          data['category'],
-          style: const TextStyle(color: Colors.white),
-        ),
-        subtitle: Text(
-          "${data['location']} - ${data['status']}",
-          style: const TextStyle(color: Colors.white54),
-        ),
+        title: Text(category, style: const TextStyle(color: Colors.white)),
+        subtitle: Text(location, style: const TextStyle(color: Colors.white54)),
         trailing: PopupMenuButton(
           onSelected: (value) {
             if (value == 'delete') {
@@ -282,7 +309,7 @@ class _HomePageState extends State<HomePage> {
             child: ElevatedButton(
               onPressed: _handleLogout,
               style: ElevatedButton.styleFrom(backgroundColor: accentPurple),
-              child: const Text("Logout"),
+              child: const Text("Logout", style: TextStyle(color: Color.fromARGB(255, 255, 255, 255))),
             ),
           ),
         ],
