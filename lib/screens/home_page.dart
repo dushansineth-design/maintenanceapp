@@ -4,8 +4,8 @@ import '../models/citizen.dart';
 import '../models/maintenance.dart';
 import '../services/maintenance_service.dart';
 import 'login_page.dart';
-import 'report_history_screen.dart'; // Import History Screen
-import 'edit_report_screen.dart';    // Import Edit Screen
+import 'report_history_screen.dart'; 
+import 'edit_report_screen.dart';    
 
 class HomePage extends StatefulWidget {
   final Citizen currentUser;
@@ -19,30 +19,67 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final MaintenanceService _maintenanceService = MaintenanceService();
   
-  // Controllers
+  // --- CONTROLLERS ---
   final _locationController = TextEditingController();
-  final _categoryController = TextEditingController();
+  final _otherCategoryController = TextEditingController();
   final _descController = TextEditingController();
 
-  // --- PALETTE COLORS ---
-  final Color bgBlack = const Color(0xFF121212); // Main Background
-  final Color bgSurface = const Color(0xFF1E1E2C); // Card Background
-  final Color accentPurple = const Color(0xFF6C63FF); // Accent
+  // --- STATE VARIABLES ---
+  String? _selectedCategory;
+  List<Maintenance> _recentReports = []; // Store reports locally here
+
+  // --- CATEGORY DATA ---
+  final List<Map<String, dynamic>> _categories = [
+    {'name': 'Road', 'icon': Icons.add_road},
+    {'name': 'Garbage', 'icon': Icons.delete_outline},
+    {'name': 'Water', 'icon': Icons.water_drop},
+    {'name': 'Electricity', 'icon': Icons.flash_on},
+    {'name': 'Street Light', 'icon': Icons.lightbulb_outline},
+    {'name': 'Others', 'icon': Icons.more_horiz},
+  ];
+
+  // --- COLORS ---
+  final Color bgBlack = const Color(0xFF121212); 
+  final Color bgSurface = const Color(0xFF1E1E2C); 
+  final Color accentPurple = const Color(0xFF6C63FF); 
+
+  @override
+  void initState() {
+    super.initState();
+    // 1. Load the reports ONCE when the app starts
+    _recentReports = _maintenanceService.getReports();
+  }
 
   // --- SUBMIT LOGIC ---
   void _submitReport() {
-    if (_locationController.text.isNotEmpty && _categoryController.text.isNotEmpty) {
+    String finalCategory = '';
+    
+    if (_selectedCategory == 'Others') {
+      finalCategory = _otherCategoryController.text;
+    } else {
+      finalCategory = _selectedCategory ?? '';
+    }
+
+    if (_locationController.text.isNotEmpty && finalCategory.isNotEmpty) {
       setState(() {
+        // Create the report in the service
         _maintenanceService.createReport(
           widget.currentUser,
           _locationController.text,
-          _categoryController.text,
+          finalCategory,
           _descController.text,
         );
+        
+        // 2. Refresh the local list so the new item shows up
+        _recentReports = _maintenanceService.getReports();
       });
+      
       _locationController.clear();
-      _categoryController.clear();
+      _otherCategoryController.clear(); 
       _descController.clear();
+      setState(() {
+        _selectedCategory = null; 
+      });
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -50,15 +87,21 @@ class _HomePageState extends State<HomePage> {
           backgroundColor: accentPurple,
         ),
       );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill in all fields")),
+      );
     }
   }
 
   // --- DELETE LOGIC ---
   void _deleteReport(Maintenance report) {
     setState(() {
-      // NOTE: Ideally, you should add a delete method to your MaintenanceService.
-      // For now, we are removing it from the UI list locally.
-      _maintenanceService.getReports().remove(report); 
+      // 3. Remove from the LOCAL list
+      _recentReports.remove(report);
+      
+      // Optional: If your service has a delete method, call it here too
+      // _maintenanceService.deleteReport(report.id);
     });
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -77,15 +120,13 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // --- DRAWER (Dark Theme) ---
+  // --- DRAWER ---
   Widget _buildDrawer() {
     return Drawer(
       backgroundColor: bgBlack, 
       child: Column(
         children: [
           const SizedBox(height: 60),
-          
-          // Profile Pic
           Container(
             padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
@@ -98,8 +139,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           const SizedBox(height: 15),
-          
-          // Name
           Text(
             widget.currentUser.name,
             style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
@@ -108,10 +147,7 @@ class _HomePageState extends State<HomePage> {
             widget.currentUser.email,
             style: const TextStyle(color: Colors.white54, fontSize: 14),
           ),
-
           const SizedBox(height: 40),
-          
-          // Details List
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -127,8 +163,6 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-
-          // Logout
           Padding(
             padding: const EdgeInsets.all(20),
             child: SizedBox(
@@ -182,8 +216,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    List<Maintenance> reports = _maintenanceService.getReports();
-
+    // Note: We use _recentReports variable here, NOT _maintenanceService.getReports()
+    
     return Scaffold(
       backgroundColor: bgBlack,
       drawer: _buildDrawer(),
@@ -212,10 +246,54 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     _buildDarkTextField(_locationController, "Location (e.g. Main St)"),
                     const SizedBox(height: 15),
-                    _buildDarkTextField(_categoryController, "Category (e.g. Road)"),
+                    
+                    // --- DROPDOWN CATEGORY ---
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: bgBlack, 
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedCategory,
+                          hint: const Text("Select Category", style: TextStyle(color: Colors.white38)),
+                          dropdownColor: bgSurface, 
+                          isExpanded: true,
+                          icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                          items: _categories.map((cat) {
+                            return DropdownMenuItem<String>(
+                              value: cat['name'],
+                              child: Row(
+                                children: [
+                                  Icon(cat['icon'], color: accentPurple, size: 20),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    cat['name'], 
+                                    style: const TextStyle(color: Colors.white)
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedCategory = value;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+
+                    if (_selectedCategory == 'Others') ...[
+                      const SizedBox(height: 15),
+                      _buildDarkTextField(_otherCategoryController, "Please specify other..."),
+                    ],
+                    
                     const SizedBox(height: 15),
                     _buildDarkTextField(_descController, "Description"),
                     const SizedBox(height: 20),
+                    
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -234,13 +312,11 @@ class _HomePageState extends State<HomePage> {
               
               const SizedBox(height: 30),
               
-              // --- LIST SECTION HEADER ---
+              // --- LIST SECTION ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text("Recent Reports", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-                  
-                  // 1. ADDED: View All History Button
                   TextButton(
                     onPressed: () {
                       Navigator.push(context, MaterialPageRoute(
@@ -254,14 +330,14 @@ class _HomePageState extends State<HomePage> {
               
               const SizedBox(height: 15),
               
-              reports.isEmpty
+              _recentReports.isEmpty
                   ? const Center(child: Text("No reports yet.", style: TextStyle(color: Colors.white54)))
                   : ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: reports.length,
+                      itemCount: _recentReports.length,
                       itemBuilder: (context, index) {
-                        final report = reports[index];
+                        final report = _recentReports[index];
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
@@ -282,7 +358,6 @@ class _HomePageState extends State<HomePage> {
                               style: const TextStyle(color: Colors.white54),
                             ),
                             
-                            // 2. ADDED: Popup Menu for Edit/Delete
                             trailing: PopupMenuButton<String>(
                               color: const Color(0xFF1E1E2C),
                               icon: const Icon(Icons.more_vert, color: Colors.white),
@@ -290,9 +365,8 @@ class _HomePageState extends State<HomePage> {
                                 if (value == 'edit') {
                                   Navigator.push(context, MaterialPageRoute(
                                     builder: (context) => EditReportScreen(
-                                      // Mapping your Maintenance model to the Edit Screen inputs
                                       title: report.category, 
-                                      description: report.description ?? "", // Handle if null
+                                      description: report.description ?? "",
                                     ),
                                   ));
                                 } else if (value == 'delete') {
@@ -304,7 +378,7 @@ class _HomePageState extends State<HomePage> {
                                   value: 'edit',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.edit, size: 20), 
+                                      Icon(Icons.edit, size: 20, color: Colors.white), 
                                       SizedBox(width: 8), 
                                       Text("Edit", style: TextStyle(color: Colors.white))
                                     ]
