@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "678303204493",
+    "project_id": "maintenancemobile-8f9b8",
+    "storage_bucket": "maintenancemobile-8f9b8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:678303204493:android:baade97e81620b595c4ec4",
+        "android_client_info": {
+          "package_name": "com.example.myflutterapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0DyYDvnWcPP9BdZDaS7PfnWW1dXVyXjg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
