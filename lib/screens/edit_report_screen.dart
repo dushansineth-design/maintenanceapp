@@ -4,7 +4,7 @@ class EditReportScreen extends StatefulWidget {
   final String title;
   final String description;
 
-  EditReportScreen({required this.title, required this.description});
+  const EditReportScreen({super.key, required this.title, required this.description});
 
   @override
   _EditReportScreenState createState() => _EditReportScreenState();

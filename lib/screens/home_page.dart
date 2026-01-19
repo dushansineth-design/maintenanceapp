@@ -4,10 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/citizen.dart';
-import '../models/maintenance.dart';
 import 'login_page.dart';
-import 'report_history_screen.dart';
-import 'edit_report_screen.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
 
 class HomePage extends StatefulWidget {
   final Citizen currentUser;
@@ -43,7 +42,7 @@ class _HomePageState extends State<HomePage> {
     {'name': 'Others', 'icon': Icons.more_horiz},
   ];
 
-  // 🔥 SUBMIT REPORT (Firestore)
+  //  SUBMIT REPORT (Firestore)
   Future<void> _submitReport() async {
     String finalCategory = _selectedCategory == 'Others'
         ? _otherCategoryController.text.trim()

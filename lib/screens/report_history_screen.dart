@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'edit_report_screen.dart';
 
 class ReportHistoryScreen extends StatefulWidget {
+  const ReportHistoryScreen({super.key});
+
   @override
   _ReportHistoryScreenState createState() => _ReportHistoryScreenState();
 }

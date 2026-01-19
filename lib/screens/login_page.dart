@@ -35,7 +35,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     try {
-      // 🔥 Firebase Login
+      // Firebase Login
       UserCredential userCredential =
           await _auth.signInWithEmailAndPassword(
         email: email,
@@ -44,14 +44,14 @@ class _LoginPageState extends State<LoginPage> {
 
       User user = userCredential.user!;
 
-      // 🔥 Get user data from Firestore
+      //  Get user data from Firestore
       DocumentSnapshot userDoc =
           await _firestore.collection('users').doc(user.uid).get();
 
       String name = userDoc.exists ? userDoc['name'] : 'User';
       String contact = userDoc.exists ? userDoc['contact'] : '0771234567';
 
-      // 🔐 Save login state locally
+      //  Save login state locally
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
       await prefs.setString('userName', name);
