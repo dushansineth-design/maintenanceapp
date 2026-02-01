@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../theme/app_theme.dart';
 import '../models/citizen.dart';
 import '../models/maintenance.dart';
 import '../services/maintenance_service.dart';
@@ -36,12 +37,7 @@ class _HomePageState extends State<HomePage> {
     {'name': 'Electricity', 'icon': Icons.flash_on},
     {'name': 'Street Light', 'icon': Icons.lightbulb_outline},
     {'name': 'Others', 'icon': Icons.more_horiz},
-  ];
-
-  // --- COLORS ---
-  final Color bgBlack = const Color(0xFF121212); 
-  final Color bgSurface = const Color(0xFF1E1E2C); 
-  final Color accentPurple = const Color(0xFF6C63FF); 
+  ]; 
 
   @override
   void initState() {
@@ -84,7 +80,7 @@ class _HomePageState extends State<HomePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text("Report Submitted!"),
-          backgroundColor: accentPurple,
+          backgroundColor: Theme.of(context).colorScheme.primary, // Use Primary Blue
         ),
       );
     } else {
@@ -123,7 +119,7 @@ class _HomePageState extends State<HomePage> {
   // --- DRAWER ---
   Widget _buildDrawer() {
     return Drawer(
-      backgroundColor: bgBlack, 
+      // Background default from Theme
       child: Column(
         children: [
           const SizedBox(height: 60),
@@ -131,7 +127,7 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: accentPurple, width: 2), 
+              border: Border.all(color: Theme.of(context).primaryColor, width: 2), 
             ),
             child: const CircleAvatar(
               radius: 45,
@@ -141,11 +137,11 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 15),
           Text(
             widget.currentUser.name,
-            style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleLarge,
           ),
           Text(
             widget.currentUser.email,
-            style: const TextStyle(color: Colors.white54, fontSize: 14),
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 40),
           Expanded(
@@ -154,12 +150,12 @@ class _HomePageState extends State<HomePage> {
               children: [
                 const Padding(
                   padding: EdgeInsets.only(bottom: 10),
-                  child: Text("ACCOUNT SETTINGS", style: TextStyle(color: Colors.white38, fontSize: 12)),
+                  child: Text("ACCOUNT SETTINGS", style: TextStyle(color: Colors.grey, fontSize: 12)),
                 ),
-                _buildDarkDetailTile(Icons.person, "Name", widget.currentUser.name),
-                _buildDarkDetailTile(Icons.email, "Email", widget.currentUser.email),
-                _buildDarkDetailTile(Icons.phone, "Contact", widget.currentUser.contact),
-                _buildDarkDetailTile(Icons.badge, "Citizen ID", widget.currentUser.citizenID),
+                _buildDetailTile(Icons.person, "Name", widget.currentUser.name),
+                _buildDetailTile(Icons.email, "Email", widget.currentUser.email),
+                _buildDetailTile(Icons.phone, "Contact", widget.currentUser.contact),
+                _buildDetailTile(Icons.badge, "Citizen ID", widget.currentUser.citizenID),
               ],
             ),
           ),
@@ -170,11 +166,7 @@ class _HomePageState extends State<HomePage> {
               height: 50,
               child: ElevatedButton(
                 onPressed: _handleLogout,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: accentPurple,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text("Logout", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: const Text("Logout"),
               ),
             ),
           ),
@@ -183,30 +175,33 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildDarkDetailTile(IconData icon, String label, String value) {
+  Widget _buildDetailTile(IconData icon, String label, String value) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: bgSurface, 
+        color: Colors.white, 
         borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 5, offset: const Offset(0, 2))
+        ]
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF282836),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: accentPurple, size: 20),
+            child: Icon(icon, color: Theme.of(context).primaryColor, size: 20),
           ),
           const SizedBox(width: 15),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
-              Text(value, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+              Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 11)),
+              Text(value, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 15, fontWeight: FontWeight.w600)),
             ],
           )
         ],
@@ -219,13 +214,16 @@ class _HomePageState extends State<HomePage> {
     // Note: We use _recentReports variable here, NOT _maintenanceService.getReports()
     
     return Scaffold(
-      backgroundColor: bgBlack,
       drawer: _buildDrawer(),
       appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: AppTheme.primaryGradient,
+          ),
+        ),
         title: const Text("Dashboard", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -234,43 +232,45 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // --- FORM SECTION ---
-              const Text("Report Issue", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+              Text("Report Issue", style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 15),
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: bgSurface, 
+                  color: Colors.white, 
                   borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))
+                  ]
                 ),
                 child: Column(
                   children: [
-                    _buildDarkTextField(_locationController, "Location (e.g. Main St)"),
+                    _buildTextField(_locationController, "Location (e.g. Main St)"),
                     const SizedBox(height: 15),
                     
                     // --- DROPDOWN CATEGORY ---
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: bgBlack, 
+                        color: Theme.of(context).scaffoldBackgroundColor, 
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: _selectedCategory,
-                          hint: const Text("Select Category", style: TextStyle(color: Colors.white38)),
-                          dropdownColor: bgSurface, 
+                          hint: const Text("Select Category"),
                           isExpanded: true,
-                          icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                          icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).primaryColor),
                           items: _categories.map((cat) {
                             return DropdownMenuItem<String>(
                               value: cat['name'],
                               child: Row(
                                 children: [
-                                  Icon(cat['icon'], color: accentPurple, size: 20),
+                                  Icon(cat['icon'], color: Theme.of(context).primaryColor, size: 20),
                                   const SizedBox(width: 10),
                                   Text(
                                     cat['name'], 
-                                    style: const TextStyle(color: Colors.white)
+                                    style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)
                                   ),
                                 ],
                               ),
@@ -287,23 +287,37 @@ class _HomePageState extends State<HomePage> {
 
                     if (_selectedCategory == 'Others') ...[
                       const SizedBox(height: 15),
-                      _buildDarkTextField(_otherCategoryController, "Please specify other..."),
+                      _buildTextField(_otherCategoryController, "Please specify other..."),
                     ],
                     
                     const SizedBox(height: 15),
-                    _buildDarkTextField(_descController, "Description"),
+                    _buildTextField(_descController, "Description"),
                     const SizedBox(height: 20),
                     
                     SizedBox(
                       width: double.infinity,
                       height: 50,
-                      child: ElevatedButton(
-                        onPressed: _submitReport,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: accentPurple,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.primaryGradient,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(context).primaryColor.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        child: const Text("Submit Report", style: TextStyle(color: Colors.white)),
+                        child: ElevatedButton(
+                          onPressed: _submitReport,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                          ),
+                          child: const Text("Submit Report"),
+                        ),
                       ),
                     ),
                   ],
@@ -316,14 +330,14 @@ class _HomePageState extends State<HomePage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Recent Reports", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                  Text("Recent Reports", style: Theme.of(context).textTheme.titleLarge),
                   TextButton(
                     onPressed: () {
                       Navigator.push(context, MaterialPageRoute(
                         builder: (context) => ReportHistoryScreen()
                       ));
                     },
-                    child: Text("View All", style: TextStyle(color: accentPurple)),
+                    child: const Text("View All"),
                   )
                 ],
               ),
@@ -331,70 +345,80 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 15),
               
               _recentReports.isEmpty
-                  ? const Center(child: Text("No reports yet.", style: TextStyle(color: Colors.white54)))
+                  ? const Center(child: Text("No reports yet."))
                   : ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _recentReports.length,
                       itemBuilder: (context, index) {
                         final report = _recentReports[index];
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: bgSurface,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: const Color(0xFF282836),
-                              child: Text(
-                                report.reportID.length >= 2 ? report.reportID.substring(0, 2) : "R", 
-                                style: TextStyle(color: accentPurple, fontWeight: FontWeight.bold)
+                        return TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          duration: Duration(milliseconds: 300 + (index * 100)),
+                          curve: Curves.easeOut,
+                          builder: (context, value, child) {
+                            return Transform.translate(
+                              offset: Offset(0, 50 * (1 - value)),
+                              child: Opacity(
+                                opacity: value,
+                                child: child,
                               ),
-                            ),
-                            title: Text(report.category, style: const TextStyle(color: Colors.white)),
-                            subtitle: Text(
-                              "${report.location} - ${report.status.name}",
-                              style: const TextStyle(color: Colors.white54),
-                            ),
-                            
-                            trailing: PopupMenuButton<String>(
-                              color: const Color(0xFF1E1E2C),
-                              icon: const Icon(Icons.more_vert, color: Colors.white),
-                              onSelected: (value) {
-                                if (value == 'edit') {
-                                  Navigator.push(context, MaterialPageRoute(
-                                    builder: (context) => EditReportScreen(
-                                      title: report.category, 
-                                      description: report.description ?? "",
+                            );
+                          },
+                          child: Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                            elevation: 2,
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                                child: Text(
+                                  report.reportID.length >= 2 ? report.reportID.substring(0, 2) : "R", 
+                                  style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)
+                                ),
+                              ),
+                              title: Text(report.category, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
+                              subtitle: Text(
+                                "${report.location} - ${report.status.name}",
+                              ),
+                              
+                              trailing: PopupMenuButton<String>(
+                                icon: const Icon(Icons.more_vert),
+                                onSelected: (value) {
+                                  if (value == 'edit') {
+                                    Navigator.push(context, MaterialPageRoute(
+                                      builder: (context) => EditReportScreen(
+                                        title: report.category, 
+                                        description: report.description ?? "",
+                                      ),
+                                    ));
+                                  } else if (value == 'delete') {
+                                    _deleteReport(report);
+                                  }
+                                },
+                                itemBuilder: (BuildContext context) => [
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.edit, size: 20), 
+                                        SizedBox(width: 8), 
+                                        Text("Edit")
+                                      ]
                                     ),
-                                  ));
-                                } else if (value == 'delete') {
-                                  _deleteReport(report);
-                                }
-                              },
-                              itemBuilder: (BuildContext context) => [
-                                const PopupMenuItem(
-                                  value: 'edit',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.edit, size: 20, color: Colors.white), 
-                                      SizedBox(width: 8), 
-                                      Text("Edit", style: TextStyle(color: Colors.white))
-                                    ]
                                   ),
-                                ),
-                                const PopupMenuItem(
-                                  value: 'delete',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.delete, color: Colors.red, size: 20), 
-                                      SizedBox(width: 8), 
-                                      Text("Delete", style: TextStyle(color: Colors.red))
-                                    ]
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete, color: Colors.red, size: 20), 
+                                        SizedBox(width: 8), 
+                                        Text("Delete", style: TextStyle(color: Colors.red))
+                                      ]
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         );
@@ -407,20 +431,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildDarkTextField(TextEditingController controller, String hint) {
+  Widget _buildTextField(TextEditingController controller, String hint) {
     return TextField(
       controller: controller,
-      style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
-        filled: true,
-        fillColor: bgBlack, 
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.white38),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }

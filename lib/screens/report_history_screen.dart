@@ -7,10 +7,7 @@ class ReportHistoryScreen extends StatefulWidget {
 }
 
 class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
-  // --- COLOR PALETTE ---
-  final Color bgBlack = const Color(0xFF121212);
-  final Color bgSurface = const Color(0xFF1E1E2C);
-  final Color accentPurple = const Color(0xFF6C63FF);
+
 
   // --- DUMMY DATA ---
   List<Map<String, String>> myReports = [
@@ -41,7 +38,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("Report deleted successfully!"),
-        backgroundColor: accentPurple,
+        backgroundColor: Theme.of(context).primaryColor,
       )
     );
   }
@@ -49,27 +46,21 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgBlack, // Dark Background
       appBar: AppBar(
-        title: const Text("Report History", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.transparent, // Seamless look
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text("Report History"),
       ),
       body: myReports.isEmpty
-          ? const Center(child: Text("No reports found.", style: TextStyle(color: Colors.white54)))
+          ? const Center(child: Text("No reports found."))
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: myReports.length,
               itemBuilder: (context, index) {
                 final report = myReports[index];
                 
-                return Container(
+                return Card(
                   margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: bgSurface, // Dark Card Color
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 2,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -81,39 +72,32 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                           children: [
                             Text(
                               report['title']!,
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
                             ),
-                            Theme(
-                              data: Theme.of(context).copyWith(
-                                cardColor: bgSurface, // Dark menu background
-                                iconTheme: const IconThemeData(color: Colors.white),
-                              ),
-                              child: PopupMenuButton<String>(
-                                color: const Color.fromARGB(255, 0, 0, 0),
-                                onSelected: (value) {
-                                  if (value == 'edit') {
-                                    Navigator.push(context, MaterialPageRoute(
-                                      builder: (context) => EditReportScreen(
-                                        title: report['title']!,
-                                        description: report['description']!,
-                                      ),
-                                    ));
-                                  } else if (value == 'delete') {
-                                    _deleteReport(index);
-                                  }
-                                },
-                                itemBuilder: (BuildContext context) => [
-                                  const PopupMenuItem(
-                                    value: 'edit', 
-                                    child: Text("Edit", style: TextStyle(color: Colors.white))
-                                  ),
-                                  const PopupMenuItem(
-                                    value: 'delete', 
-                                    child: Text("Delete", style: TextStyle(color: Colors.redAccent))
-                                  ),
-                                ],
-                                icon: const Icon(Icons.more_vert, color: Colors.white),
-                              ),
+                            PopupMenuButton<String>(
+                              onSelected: (value) {
+                                if (value == 'edit') {
+                                  Navigator.push(context, MaterialPageRoute(
+                                    builder: (context) => EditReportScreen(
+                                      title: report['title']!,
+                                      description: report['description']!,
+                                    ),
+                                  ));
+                                } else if (value == 'delete') {
+                                  _deleteReport(index);
+                                }
+                              },
+                              itemBuilder: (BuildContext context) => [
+                                const PopupMenuItem(
+                                  value: 'edit', 
+                                  child: Text("Edit")
+                                ),
+                                const PopupMenuItem(
+                                  value: 'delete', 
+                                  child: Text("Delete", style: TextStyle(color: Colors.redAccent))
+                                ),
+                              ],
+                              icon: const Icon(Icons.more_vert),
                             ),
                           ],
                         ),
@@ -123,7 +107,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                         // --- DESCRIPTION ---
                         Text(
                           report['description']!,
-                          style: const TextStyle(color: Colors.white54, fontSize: 14),
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
 
                         const SizedBox(height: 16),

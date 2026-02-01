@@ -11,10 +11,7 @@ class EditReportScreen extends StatefulWidget {
 }
 
 class _EditReportScreenState extends State<EditReportScreen> {
-  // --- COLOR PALETTE ---
-  final Color bgBlack = const Color(0xFF121212);
-  final Color bgSurface = const Color(0xFF1E1E2C);
-  final Color accentPurple = const Color(0xFF6C63FF);
+
 
   late TextEditingController _titleController;
   late TextEditingController _descController;
@@ -29,12 +26,8 @@ class _EditReportScreenState extends State<EditReportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgBlack, // Dark Background
       appBar: AppBar(
-        title: const Text("Edit Report", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text("Edit Report"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -44,14 +37,17 @@ class _EditReportScreenState extends State<EditReportScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: bgSurface, // Dark Card
+                color: Colors.white, 
                 borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))
+                ],
               ),
               child: Column(
                 children: [
-                  _buildDarkTextField(_titleController, "Report Title"),
+                  _buildTextField(_titleController, "Report Title"),
                   const SizedBox(height: 20),
-                  _buildDarkTextField(_descController, "Description", maxLines: 5),
+                  _buildTextField(_descController, "Description", maxLines: 5),
                   
                   const SizedBox(height: 30),
 
@@ -60,20 +56,16 @@ class _EditReportScreenState extends State<EditReportScreen> {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: accentPurple, // Your Theme Purple
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: const Text("Update Successful!"),
-                            backgroundColor: accentPurple,
+                            backgroundColor: Theme.of(context).primaryColor,
                           )
                         );
                         Navigator.pop(context);
                       },
-                      child: const Text("Save Changes", style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text("Save Changes"),
                     ),
                   ),
                 ],
@@ -86,26 +78,17 @@ class _EditReportScreenState extends State<EditReportScreen> {
   }
 
   // Helper for Dark Input Fields
-  Widget _buildDarkTextField(TextEditingController controller, String label, {int maxLines = 1}) {
+  Widget _buildTextField(TextEditingController controller, String label, {int maxLines = 1}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600)),
+        Text(label, style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           maxLines: maxLines,
-          style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
-            filled: true,
-            fillColor: bgBlack, // Inner input is darker (0xFF121212)
             hintText: "Enter $label",
-            hintStyle: const TextStyle(color: Colors.white38),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
       ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../theme/app_theme.dart';
 import 'home_page.dart';
 import '../models/citizen.dart';
 
@@ -10,14 +11,37 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // Define the Palette Colors locally for easy use
-  final Color bgBlack = const Color(0xFF121212);
-  final Color bgSurface = const Color(0xFF1E1E2C);
-  final Color accentPurple = const Color(0xFF6C63FF);
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1, milliseconds: 500),
+    );
+
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.5),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   void _login() async {
     String email = _emailController.text;
@@ -47,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text("Invalid: dushan@gmail.com / 1234"),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -57,83 +81,114 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgBlack, // Dark Background
-      appBar: AppBar(
-        title: const Text("Welcome to Maintenance App", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.transparent, // Transparent AppBar
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Center(
-              child: Icon(Icons.lock_outline, size: 80, color: Color(0xFF6C63FF)),
-            ),
-            const SizedBox(height: 40),
-            
-            // Email Field
-            const Text("Email Address", style: TextStyle(color: Colors.white70)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _emailController,
-              style: const TextStyle(color: Colors.white),
-              decoration: _inputDecoration("Enter your email"),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Password Field
-            const Text("Password", style: TextStyle(color: Colors.white70)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              style: const TextStyle(color: Colors.white),
-              decoration: _inputDecoration("Enter your password"),
-            ),
-            
-            const SizedBox(height: 40),
-            
-            // Login Button
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed: _login,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: accentPurple, // Purple Button
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                ),
-                child: const Text(
-                  "Login", 
-                  style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)
+      // Gradient Background (Mesh-like)
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.05),
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: AppTheme.primaryGradient.scale(0.1),
+                        ),
+                        child: Icon(
+                          Icons.travel_explore, // Travel icon
+                          size: 80, 
+                          color: Theme.of(context).primaryColor
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Center(
+                      child: Text(
+                        "Welcome Back",
+                        style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                          color: Theme.of(context).primaryColor,
+                          fontSize: 28,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 50),
+                    
+                    // Email Field
+                    Text("Email Address", style: Theme.of(context).textTheme.titleSmall),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                        hintText: "Enter your email",
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Password Field
+                    Text("Password", style: Theme.of(context).textTheme.titleSmall),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        hintText: "Enter your password",
+                        prefixIcon: Icon(Icons.lock_outline),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 40),
+                    
+                    // Gradient Login Button
+                    Container(
+                      width: double.infinity,
+                      height: 55,
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.primaryGradient,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context).primaryColor.withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _login,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        ),
+                        child: const Text("LOGIN NOW"),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
-    );
-  }
-
-  // Helper for Dark Input Style
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      filled: true,
-      fillColor: bgSurface, // Dark Grey Input Background
-      hintText: hint,
-      hintStyle: const TextStyle(color: Colors.white38),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: BorderSide.none,
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
     );
   }
 }

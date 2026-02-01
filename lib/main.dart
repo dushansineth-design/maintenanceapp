@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'models/citizen.dart';
 import 'screens/login_page.dart';
 import 'screens/home_page.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   // 1. Setup Flutter engine
@@ -43,7 +44,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Maintenance App',
-      home: startScreen, // <--- Opens the correct page automatically
+      theme: AppTheme.lightTheme, // <--- New Theme Applied
+      home: startScreen, 
     );
   }
 }
